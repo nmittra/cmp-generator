@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { Upload, FileText, Brain, ArrowLeft, Loader2, CheckCircle, AlertCircle, Sparkles } from 'lucide-react';
 import { UserProfile, ContractManagementPlan } from '../types';
 import { analyseContract } from '../utils/aiAnalysis';
+import { parseContractFile, formatFileSize, getFileAcceptTypes } from '../utils/fileParser';
 
 interface ContractUploadProps {
   user: UserProfile;
@@ -17,6 +18,8 @@ export function ContractUpload({ user, onCMPGenerated, isLoading, setIsLoading, 
   const [selectedModel, setSelectedModel] = useState('free-model');
   const [error, setError] = useState('');
   const [dragActive, setDragActive] = useState(false);
+  const [isParsing, setIsParsing] = useState(false);
+  const [fileSize, setFileSize] = useState('');
 
   const models = [
     { id: 'free-model', name: 'Standard AI', desc: 'Good quality analysis', tier: 'free' as const },
@@ -25,17 +28,27 @@ export function ContractUpload({ user, onCMPGenerated, isLoading, setIsLoading, 
     { id: 'gpt4-mini', name: 'GPT-4o Mini', desc: 'Balanced performance', tier: 'premium' as const },
   ];
 
-  const handleFileUpload = useCallback((file: File) => {
+  const handleFileUpload = useCallback(async (file: File) => {
     setError('');
     setFileName(file.name);
+    setFileSize(formatFileSize(file.size));
+    setIsParsing(true);
     
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = e.target?.result as string;
-      setContractText(text);
-    };
-    reader.onerror = () => setError('Failed to read file. Please try a different format.');
-    reader.readAsText(file);
+    try {
+      const result = await parseContractFile(file);
+      
+      if (result.success) {
+        setContractText(result.text);
+      } else {
+        setError(result.error || 'Failed to extract text from file.');
+        setContractText('');
+      }
+    } catch (err) {
+      setError('Failed to parse file. Please try a different format or convert to .txt first.');
+      setContractText('');
+    } finally {
+      setIsParsing(false);
+    }
   }, []);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -177,8 +190,11 @@ This Agreement is governed by the laws of England and Wales.`;
         <p className="text-slate-700 font-medium mb-2">
           Drag & drop your contract file here
         </p>
-        <p className="text-slate-500 text-sm mb-4">
-          Supports .txt, .doc, .docx, .pdf (text extraction)
+        <p className="text-slate-500 text-sm mb-1">
+          Supports <strong>.docx</strong>, <strong>.pdf</strong>, <strong>.txt</strong>, <strong>.html</strong>, <strong>.rtf</strong>
+        </p>
+        <p className="text-slate-400 text-xs mb-4">
+          Text is automatically extracted from Word documents and PDFs
         </p>
         <label className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg cursor-pointer transition-colors">
           <Upload className="w-4 h-4" />
@@ -186,7 +202,7 @@ This Agreement is governed by the laws of England and Wales.`;
           <input
             type="file"
             className="hidden"
-            accept=".txt,.doc,.docx,.pdf,.rtf"
+            accept={getFileAcceptTypes()}
             onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
           />
         </label>
@@ -197,12 +213,36 @@ This Agreement is governed by the laws of England and Wales.`;
 
       {/* File info */}
       {fileName && (
-        <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-          <CheckCircle className="w-5 h-5 text-emerald-500" />
-          <div>
-            <p className="text-sm font-medium text-emerald-800">{fileName}</p>
-            <p className="text-xs text-emerald-600">Contract text loaded successfully</p>
-          </div>
+        <div className={`flex items-center gap-3 rounded-xl p-4 border ${
+          isParsing ? 'bg-blue-50 border-blue-200' :
+          error ? 'bg-red-50 border-red-200' :
+          'bg-emerald-50 border-emerald-200'
+        }`}>
+          {isParsing ? (
+            <>
+              <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+              <div>
+                <p className="text-sm font-medium text-blue-800">{fileName}</p>
+                <p className="text-xs text-blue-600">Extracting text from document...</p>
+              </div>
+            </>
+          ) : error ? (
+            <>
+              <AlertCircle className="w-5 h-5 text-red-500" />
+              <div>
+                <p className="text-sm font-medium text-red-800">{fileName}</p>
+                <p className="text-xs text-red-600">{error}</p>
+              </div>
+            </>
+          ) : (
+            <>
+              <CheckCircle className="w-5 h-5 text-emerald-500" />
+              <div>
+                <p className="text-sm font-medium text-emerald-800">{fileName} {fileSize && `(${fileSize})`}</p>
+                <p className="text-xs text-emerald-600">Contract text extracted successfully</p>
+              </div>
+            </>
+          )}
         </div>
       )}
 
