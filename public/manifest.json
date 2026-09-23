@@ -1,0 +1,19 @@
+{
+  "name": "CMP Generator - Contract Management Plans",
+  "short_name": "CMP Generator",
+  "description": "AI-powered Contract Management Plan generator following PA23 and GCF guidelines",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#1e3a5f",
+  "orientation": "any",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
