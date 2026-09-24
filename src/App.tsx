@@ -8,42 +8,36 @@ import { Reminders } from './components/Reminders';
 import { PricingPage } from './components/PricingPage';
 import { Header } from './components/Header';
 import { LandingPage } from './components/LandingPage';
+import { AuthPage } from './components/AuthPage';
+import { UserProvider, useUser } from './context/UserContext';
 
-type Page = 'landing' | 'dashboard' | 'upload' | 'viewer' | 'settings' | 'reminders' | 'pricing';
+type Page = 'landing' | 'auth' | 'dashboard' | 'upload' | 'viewer' | 'settings' | 'reminders' | 'pricing';
 
-function App() {
+function AppContent() {
+  const { user, isAuthenticated } = useUser();
   const [currentPage, setCurrentPage] = useState<Page>('landing');
-  const [user, setUser] = useState<UserProfile>({
-    id: '1',
-    name: 'Government User',
-    email: 'user@gov.uk',
-    organisation: 'HM Government',
-    tier: 'free',
-    aiCreditsRemaining: 5,
-    contractsCount: 0
-  });
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [currentCMP, setCurrentCMP] = useState<ContractManagementPlan | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Redirect to auth if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated && currentPage !== 'landing' && currentPage !== 'auth') {
+      setCurrentPage('auth');
+    }
+  }, [isAuthenticated, currentPage]);
+
   // Load from localStorage
   useEffect(() => {
-    const savedUser = localStorage.getItem('cmp_user');
     const savedCMPs = localStorage.getItem('cmp_plans');
     const savedContracts = localStorage.getItem('cmp_contracts');
     
-    if (savedUser) setUser(JSON.parse(savedUser));
     if (savedCMPs) {
       const plans = JSON.parse(savedCMPs);
       if (plans.length > 0) setCurrentCMP(plans[plans.length - 1]);
     }
     if (savedContracts) setContracts(JSON.parse(savedContracts));
   }, []);
-
-  // Save to localStorage
-  useEffect(() => {
-    localStorage.setItem('cmp_user', JSON.stringify(user));
-  }, [user]);
 
   useEffect(() => {
     localStorage.setItem('cmp_contracts', JSON.stringify(contracts));
@@ -54,18 +48,21 @@ function App() {
     const savedCMPs = JSON.parse(localStorage.getItem('cmp_plans') || '[]');
     savedCMPs.push(cmp);
     localStorage.setItem('cmp_plans', JSON.stringify(savedCMPs));
-    setUser(prev => ({ ...prev, contractsCount: prev.contractsCount + 1 }));
     setCurrentPage('viewer');
-  };
-
-  const handleUpgrade = () => {
-    setUser(prev => ({ ...prev, tier: 'premium', aiCreditsRemaining: 999 }));
   };
 
   const navigate = (page: Page) => setCurrentPage(page);
 
   if (currentPage === 'landing') {
-    return <LandingPage onGetStarted={() => navigate('dashboard')} onPricing={() => navigate('pricing')} />;
+    return <LandingPage onGetStarted={() => navigate('auth')} onPricing={() => navigate('pricing')} />;
+  }
+
+  if (currentPage === 'auth') {
+    return <AuthPage onSuccess={() => navigate('dashboard')} />;
+  }
+
+  if (!isAuthenticated || !user) {
+    return <AuthPage onSuccess={() => navigate('dashboard')} />;
   }
 
   return (
@@ -74,7 +71,6 @@ function App() {
         user={user} 
         currentPage={currentPage} 
         onNavigate={navigate}
-        onLogout={() => navigate('landing')}
       />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -85,7 +81,6 @@ function App() {
             currentCMP={currentCMP}
             onUploadNew={() => navigate('upload')}
             onViewCMP={() => navigate('viewer')}
-            onUpgrade={handleUpgrade}
           />
         )}
         
@@ -104,23 +99,30 @@ function App() {
             cmp={currentCMP}
             user={user}
             onBack={() => navigate('dashboard')}
-            onUpgrade={handleUpgrade}
           />
         )}
         
         {currentPage === 'settings' && (
-          <Settings user={user} setUser={setUser} onUpgrade={handleUpgrade} />
+          <Settings user={user} />
         )}
         
         {currentPage === 'reminders' && (
-          <Reminders cmp={currentCMP} user={user} onUpgrade={handleUpgrade} />
+          <Reminders cmp={currentCMP} user={user} />
         )}
         
         {currentPage === 'pricing' && (
-          <PricingPage user={user} onUpgrade={handleUpgrade} onBack={() => navigate('dashboard')} />
+          <PricingPage user={user} onBack={() => navigate('dashboard')} />
         )}
       </main>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <UserProvider>
+      <AppContent />
+    </UserProvider>
   );
 }
 

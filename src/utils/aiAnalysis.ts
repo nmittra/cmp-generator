@@ -1,4 +1,6 @@
 import { CMPSection, ContractManagementPlan, RiskItem, KPI, Stakeholder } from '../types';
+import { getApiKey } from '../context/UserContext';
+import { askAboutContract } from './openRouter';
 
 // Simulated AI analysis - in production, this would call an actual LLM API
 export async function analyseContract(
@@ -637,11 +639,23 @@ function generateReminders(contractName: string) {
   ];
 }
 
-// AI-powered contract analysis (simulated)
+// AI-powered contract analysis - uses OpenRouter if key available, otherwise simulated
 export async function aiAnalyseContract(text: string, prompt: string): Promise<string> {
+  // Try to use OpenRouter if API key is available
+  try {
+    const apiKey = await getApiKey('openrouter');
+    
+    if (apiKey) {
+      return await askAboutContract(prompt, text);
+    }
+  } catch (error) {
+    // Fall back to simulated analysis
+    console.log('OpenRouter not available, using simulated analysis');
+  }
+  
+  // Simulated AI response (fallback)
   await new Promise(resolve => setTimeout(resolve, 1500));
   
-  // Simulated AI response based on prompt type
   if (prompt.includes('risk')) {
     return `Based on analysis of the contract, the following key risks have been identified:
 

@@ -1,13 +1,14 @@
 import { ArrowLeft, Check, Crown, Zap, Shield, Brain, RefreshCw, Bell, FileText, Globe } from 'lucide-react';
 import { UserProfile } from '../types';
+import { useUser } from '../context/UserContext';
 
 interface PricingPageProps {
   user: UserProfile;
-  onUpgrade: () => void;
   onBack: () => void;
 }
 
-export function PricingPage({ user, onUpgrade, onBack }: PricingPageProps) {
+export function PricingPage({ user, onBack }: PricingPageProps) {
+  const { upgradeToPremium } = useUser();
   return (
     <div className="max-w-5xl mx-auto space-y-8">
       <div className="flex items-center gap-4">
@@ -88,7 +89,7 @@ export function PricingPage({ user, onUpgrade, onBack }: PricingPageProps) {
           </div>
           
           <button
-            onClick={onUpgrade}
+            onClick={upgradeToPremium}
             disabled={user.tier === 'premium'}
             className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white py-3 rounded-xl font-medium mb-6 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-default"
           >

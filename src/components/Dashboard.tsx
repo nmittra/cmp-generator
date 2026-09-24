@@ -1,16 +1,18 @@
 import { FileText, Upload, Bell, Crown, TrendingUp, Shield, Clock, AlertTriangle, Brain, Calendar, CheckCircle, Globe } from 'lucide-react';
 import { UserProfile, Contract, ContractManagementPlan } from '../types';
 
+import { useUser } from '../context/UserContext';
+
 interface DashboardProps {
   user: UserProfile;
   contracts: Contract[];
   currentCMP: ContractManagementPlan | null;
   onUploadNew: () => void;
   onViewCMP: () => void;
-  onUpgrade: () => void;
 }
 
-export function Dashboard({ user, contracts, currentCMP, onUploadNew, onViewCMP, onUpgrade }: DashboardProps) {
+export function Dashboard({ user, contracts, currentCMP, onUploadNew, onViewCMP }: DashboardProps) {
+  const { upgradeToPremium } = useUser();
   const upcomingReminders = currentCMP?.reminders.filter(r => !r.completed) || [];
   const urgentReminders = upcomingReminders.filter(r => {
     const daysUntil = Math.ceil((new Date(r.dueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
@@ -56,7 +58,7 @@ export function Dashboard({ user, contracts, currentCMP, onUploadNew, onViewCMP,
             <ActionButton icon={Upload} label="Upload New Contract" desc="Generate a CMP from a contract document" onClick={onUploadNew} />
             <ActionButton icon={FileText} label="View CMP" desc="Review and edit your Contract Management Plan" onClick={onViewCMP} disabled={!currentCMP} />
             <ActionButton icon={Bell} label="Manage Reminders" desc="Set up review dates and notifications" onClick={() => {}} />
-            <ActionButton icon={Crown} label="Upgrade Plan" desc="Unlock premium features and unlimited AI" onClick={onUpgrade} highlight={user.tier === 'free'} />
+            <ActionButton icon={Crown} label="Upgrade Plan" desc="Unlock premium features and unlimited AI" onClick={upgradeToPremium} highlight={user.tier === 'free'} />
           </div>
         </div>
 
@@ -294,7 +296,7 @@ export function Dashboard({ user, contracts, currentCMP, onUploadNew, onViewCMP,
         {user.tier === 'free' && (
           <div className="mt-4 pt-4 border-t border-white/10 text-center">
             <p className="text-xs text-slate-400 mb-2">Full strategic insights with AI-powered recommendations available on Premium</p>
-            <button onClick={onUpgrade} className="text-xs bg-amber-500 text-white px-3 py-1.5 rounded font-medium hover:bg-amber-600 transition-colors">
+            <button onClick={upgradeToPremium} className="text-xs bg-amber-500 text-white px-3 py-1.5 rounded font-medium hover:bg-amber-600 transition-colors">
               Unlock Premium Insights
             </button>
           </div>
