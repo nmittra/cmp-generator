@@ -108,17 +108,21 @@ async function parseDocx(file: File): Promise<string> {
  * Parse PDF files using pdfjs-dist
  */
 async function parsePdf(file: File): Promise<string> {
-  // Dynamic import to avoid loading PDF.js until needed
+  // Dynamic import of pdfjs-dist
   const pdfjsLib = await import('pdfjs-dist');
   
-  // Disable worker to run on main thread - simpler and more reliable
-  // This is fine for our use case of extracting text from contracts
-  pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+  // Import worker URL using Vite's ?url suffix
+  // This tells Vite to return the URL of the asset instead of its content
+  const workerUrl = new URL(
+    'pdfjs-dist/build/pdf.worker.min.mjs',
+    import.meta.url
+  ).href;
+  
+  pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
 
   const arrayBuffer = await file.arrayBuffer();
   const loadingTask = pdfjsLib.getDocument({
     data: new Uint8Array(arrayBuffer),
-    useWorkerFetch: false,
     useSystemFonts: true,
   });
   

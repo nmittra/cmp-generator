@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { Bell, Calendar, CheckCircle, Clock, AlertTriangle, Plus, Crown, Filter } from 'lucide-react';
 import { ContractManagementPlan, UserProfile, Reminder } from '../types';
+import { useUser } from '../context/UserContext';
 
 interface RemindersProps {
   cmp: ContractManagementPlan | null;
   user: UserProfile;
-  onUpgrade: () => void;
 }
 
-export function Reminders({ cmp, user, onUpgrade }: RemindersProps) {
+export function Reminders({ cmp, user }: RemindersProps) {
+  const { upgradeToPremium } = useUser();
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'overdue' | 'completed'>('all');
   const [showAddReminder, setShowAddReminder] = useState(false);
   const [newReminder, setNewReminder] = useState({ title: '', dueDate: '', type: 'review' as Reminder['type'] });
@@ -69,7 +70,7 @@ export function Reminders({ cmp, user, onUpgrade }: RemindersProps) {
             <p className="text-xs text-amber-700 mt-0.5">
               Premium includes: email notifications, SMS alerts, calendar integration, and automated reminder scheduling based on contract terms.
             </p>
-            <button onClick={onUpgrade} className="mt-2 text-xs bg-amber-500 text-white px-3 py-1.5 rounded font-medium hover:bg-amber-600 transition-colors">
+            <button onClick={upgradeToPremium} className="mt-2 text-xs bg-amber-500 text-white px-3 py-1.5 rounded font-medium hover:bg-amber-600 transition-colors">
               Upgrade to Premium
             </button>
           </div>

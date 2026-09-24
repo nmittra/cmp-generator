@@ -1,5 +1,6 @@
 import { Shield, LayoutDashboard, Upload, FileText, Settings, Bell, Crown, LogOut } from 'lucide-react';
 import { UserProfile } from '../types';
+import { useUser } from '../context/UserContext';
 
 type Page = 'landing' | 'dashboard' | 'upload' | 'viewer' | 'settings' | 'reminders' | 'pricing';
 
@@ -7,10 +8,10 @@ interface HeaderProps {
   user: UserProfile;
   currentPage: Page;
   onNavigate: (page: Page) => void;
-  onLogout: () => void;
 }
 
-export function Header({ user, currentPage, onNavigate, onLogout }: HeaderProps) {
+export function Header({ user, currentPage, onNavigate }: HeaderProps) {
+  const { logout } = useUser();
   const navItems = [
     { id: 'dashboard' as Page, label: 'Dashboard', icon: LayoutDashboard },
     { id: 'upload' as Page, label: 'Upload', icon: Upload },
@@ -70,7 +71,7 @@ export function Header({ user, currentPage, onNavigate, onLogout }: HeaderProps)
               <span className="text-slate-600 hidden lg:block text-sm">{user.organisation}</span>
             </div>
 
-            <button onClick={onLogout} className="text-slate-400 hover:text-slate-600 transition-colors" title="Logout">
+            <button onClick={logout} className="text-slate-400 hover:text-slate-600 transition-colors" title="Logout">
               <LogOut className="w-4 h-4" />
             </button>
           </div>

@@ -3,15 +3,16 @@ import { ArrowLeft, Download, FileText, Globe, Eye, Edit3, CheckCircle, Clock, A
 import { ContractManagementPlan, UserProfile } from '../types';
 import { generateWordDocument, downloadHTML } from '../utils/documentGenerator';
 import { aiAnalyseContract } from '../utils/aiAnalysis';
+import { useUser } from '../context/UserContext';
 
 interface CMPViewerProps {
   cmp: ContractManagementPlan;
   user: UserProfile;
   onBack: () => void;
-  onUpgrade: () => void;
 }
 
-export function CMPViewer({ cmp, user, onBack, onUpgrade }: CMPViewerProps) {
+export function CMPViewer({ cmp, user, onBack }: CMPViewerProps) {
+  const { upgradeToPremium } = useUser();
   const [activeSection, setActiveSection] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
   const [showAIChat, setShowAIChat] = useState(false);
@@ -39,10 +40,12 @@ export function CMPViewer({ cmp, user, onBack, onUpgrade }: CMPViewerProps) {
     if (!aiQuery.trim()) return;
     setIsAiLoading(true);
     try {
-      const response = await aiAnalyseContract('', aiQuery);
+      // Get contract text from CMP sections
+      const contractText = cmp.sections.map(s => s.content).join('\n\n');
+      const response = await aiAnalyseContract(contractText, aiQuery);
       setAiResponse(response);
     } catch (err) {
-      setAiResponse('Failed to get AI response. Please try again.');
+      setAiResponse('Failed to get AI response. Please try again. Check your OpenRouter API key in Settings.');
     }
     setIsAiLoading(false);
   };
@@ -138,7 +141,7 @@ export function CMPViewer({ cmp, user, onBack, onUpgrade }: CMPViewerProps) {
               <p className="text-sm text-amber-700 mt-1">
                 Contract update analysis is available on the Premium plan. Upgrade to automatically update your CMP when contracts change.
               </p>
-              <button onClick={onUpgrade} className="mt-3 bg-amber-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors">
+              <button onClick={upgradeToPremium} className="mt-3 bg-amber-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors">
                 Upgrade to Premium
               </button>
             </div>
